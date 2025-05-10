@@ -12,6 +12,7 @@ class CLIManager:
         self.parser = Parser()
         self.executor = Executor()
         self.is_running = False
+
     def start(self):
         """Start the REPL (Read-Eval-Print Loop) session."""
         self.is_running = True

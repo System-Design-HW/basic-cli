@@ -26,13 +26,13 @@ class Executor:
             cmd_obj = self.registry.get_command(command.command_name)
 
             exit_code, output = cmd_obj.execute(command=command, stdin=previous_output)
-            
+
             previous_output = output
-            
+
             if exit_code != 0:
                 break
 
         if previous_output is not None:
             print(previous_output)
-            
+
         return exit_code

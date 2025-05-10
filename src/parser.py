@@ -1,11 +1,8 @@
 import shlex
 from typing import List
 import os
-import subprocess
 import re
-import sys
-from abc import ABC, abstractmethod
-from typing import Dict, Type, List, Optional
+
 
 class ParsedCommand:
     """Class representing a parsed command.
@@ -73,29 +70,29 @@ class Parser:
             raise ParseError("Empty input")
 
         input = self._process_substitutions(input)
-        
+
         commands = []
         for cmd_str in input.split('|'):
             cmd_str = cmd_str.strip()
             if cmd_str:
                 commands.append(self._parse_command(cmd_str))
-        
+
         return ParsedInput(commands=commands)
 
     def _process_substitutions(self, input: str) -> str:
         """Process variable substitutions in the input string.
-        
+
         Args:
             input: Original input string
-            
+
         Returns:
             str: String with substitutions applied
         """
         def replace_var(match):
             var_name = match.group(1)
             return os.getenv(var_name, '')
-        
+
         input = re.sub(r'\$\{(\w+)\}', replace_var, input)
         input = re.sub(r'\$(\w+)', replace_var, input)
-        
+
         return input

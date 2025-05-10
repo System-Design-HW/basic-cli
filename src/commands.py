@@ -1,15 +1,11 @@
-import os
 import subprocess
 from abc import ABC, abstractmethod
 from typing import Dict, Type
 from src.parser import ParsedCommand
 import os
-import subprocess
-import re
 import sys
-from abc import ABC, abstractmethod
-from typing import Dict, Type, List, Optional
-from src.parser import ParsedCommand
+from typing import Optional
+
 
 class Command(ABC):
     """Abstract base class defining the command execution interface."""
@@ -24,7 +20,7 @@ class Command(ABC):
             stdin: Optional input from previous command in pipe
 
         Returns:
-            tuple: (exit status code, output) 
+            tuple: (exit status code, output)
                    Exit status code (0 for success, non-zero for errors)
                    Output string or None if output was already printed
         """
@@ -50,7 +46,7 @@ class CatCommand(Command):
             elif not command.args:
                 content = sys.stdin.read()
                 return (0, content)
-            
+
             output = []
             for filepath in command.args:
                 with open(filepath, 'r') as f:
@@ -146,7 +142,7 @@ class DefaultCommand(Command):
         """
         try:
             input_data = stdin.encode('utf-8') if stdin else None
-            
+
             result = subprocess.run(
                 [command.command_name] + command.args,
                 input=input_data,
@@ -154,13 +150,13 @@ class DefaultCommand(Command):
                 capture_output=True,
                 text=False
             )
-            
+
             stdout = result.stdout.decode('utf-8').rstrip('\n')
             stderr = result.stderr.decode('utf-8').rstrip('\n')
-            
+
             if stderr:
                 print(stderr, file=sys.stderr)
-            
+
             return (result.returncode, stdout)
         except FileNotFoundError:
             print(f"{command.command_name}: command not found", file=sys.stderr)
