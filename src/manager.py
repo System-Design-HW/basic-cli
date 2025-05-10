@@ -9,21 +9,18 @@ class CLIManager:
 
     def __init__(self):
         """Initialize CLI components and state."""
-        self.parser = Parser()		# Command input parser
-        self.executor = Executor()  # Command execution handler
-        self.is_running = False		# Session activity flag
-
+        self.parser = Parser()
+        self.executor = Executor()
+        self.is_running = False
     def start(self):
         """Start the REPL (Read-Eval-Print Loop) session."""
         self.is_running = True
         while self.is_running:
             try:
-                # Get user input
                 input = self._get_input()
                 if not input:
                     continue
 
-                # Process command and display exit code
                 exit_code = self._process_command(input)
                 print(f"Exit code: {exit_code}")
             except ExitCommandException:
@@ -60,7 +57,7 @@ class CLIManager:
         """
         parsed_input = self.parser.parse(input)
         if not parsed_input.commands:
-            return 0  # Return success for empty input
+            return 0
 
         return self.executor.execute(parsed_input)
 
