@@ -74,3 +74,13 @@ class TestCLIManager(unittest.TestCase):
         output = self.held_output.getvalue()
         self.assertIn("3 3 17", output)
         self.assertIn("Exit code: 0", output)
+    
+    @patch('builtins.input')
+    def test_multiple_exit_in_multiple_pipes(self, mock_input):
+        mock_input.side_effect = [
+            "cat $TEST_VAR_PATH_TO_FILE | exit | wc", 
+        ]
+        manager = CLIManager()
+        manager.start()
+        output = self.held_output.getvalue()
+        self.assertIn("`exit` received, closing...", output)
