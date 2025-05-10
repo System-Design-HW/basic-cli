@@ -1,3 +1,4 @@
+from typing import Optional
 from src.commands import CommandRegistry
 from src.parser import ParsedInput
 
@@ -19,12 +20,19 @@ class Executor:
             int: Exit code from the last executed command
         """
         exit_code: int = 0
+        previous_output: Optional[str] = None
 
-        # Execute each command in sequence
         for command in commands.commands:
-            # Get appropriate command implementation from registry
             cmd_obj = self.registry.get_command(command.command_name)
 
-            # Execute command and store exit code
-            exit_code = cmd_obj.execute(command=command)
+            exit_code, output = cmd_obj.execute(command=command, stdin=previous_output)
+            
+            previous_output = output
+            
+            if exit_code != 0:
+                break
+
+        if previous_output is not None:
+            print(previous_output)
+            
         return exit_code
