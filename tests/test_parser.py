@@ -106,4 +106,4 @@ class TestExecutor(unittest.TestCase):
         ])
         exit_code = self.executor.execute(commands)
         self.assertNotEqual(exit_code, 0)
-        output = mock_stdout.getvalue()
+

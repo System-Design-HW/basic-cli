@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 from unittest.mock import patch
 from io import StringIO
@@ -11,10 +12,16 @@ class TestCLIManager(unittest.TestCase):
         self.held_output = StringIO()
         sys.stdout = self.held_output
         os.environ['TEST_VAR'] = 'test_value'
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+        self.temp_file.write(b"line1\nline2\nline3")
+        self.temp_file.close()
+        os.environ['TEST_VAR_PATH_TO_FILE'] = self.temp_file.name
 
     def tearDown(self):
         sys.stdout = sys.__stdout__
+        os.unlink(self.temp_file.name)
         del os.environ['TEST_VAR']
+        del os.environ['TEST_VAR_PATH_TO_FILE']
 
     @patch('builtins.input')
     def test_session_flow(self, mock_input):
@@ -54,4 +61,16 @@ class TestCLIManager(unittest.TestCase):
         manager.start()
         output = self.held_output.getvalue()
         self.assertIn("1 3 17", output)
+        self.assertIn("Exit code: 0", output)
+
+    @patch('builtins.input')
+    def test_multiple_pipes_and_envvar(self, mock_input):
+        mock_input.side_effect = [
+            "cat $TEST_VAR_PATH_TO_FILE | cat | wc", 
+            "exit"
+        ]
+        manager = CLIManager()
+        manager.start()
+        output = self.held_output.getvalue()
+        self.assertIn("3 3 17", output)
         self.assertIn("Exit code: 0", output)
