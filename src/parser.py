@@ -1,6 +1,11 @@
 import shlex
 from typing import List
-
+import os
+import subprocess
+import re
+import sys
+from abc import ABC, abstractmethod
+from typing import Dict, Type, List, Optional
 
 class ParsedCommand:
     """Class representing a parsed command.
@@ -19,6 +24,7 @@ class ParsedInput:
 
     Attributes:
         commands (List[ParsedCommand]): List of parsed commands.
+        substitutions (Dict[str, str]): Dictionary of variable substitutions.
     """
     def __init__(self, commands: List[ParsedCommand]):
         self.commands = commands
@@ -43,13 +49,11 @@ class Parser:
         Returns:
             ParsedCommand: Object containing the command and its arguments.
         """
-        # Split input while respecting quotes and escaping
         args: List[str] = shlex.split(input)
 
         if len(args) == 0:
             raise ParseError("Empty command")
 
-        # Extract command name (first element)
         command_name: str = args.pop(0)
         return ParsedCommand(command_name=command_name, args=args)
 
@@ -57,12 +61,41 @@ class Parser:
         """Main method to parse user input.
 
         Args:
-            input (str): Input string to parse.
+            input: Input string to parse.
 
         Returns:
             ParsedInput: Object containing parsed commands.
 
-        Note:
-            Current implementation assumes single-command input.
+        Raises:
+            ParseError: If input is empty or cannot be parsed
         """
-        return ParsedInput(commands=[self._parse_command(input=input)])
+        if not input.strip():
+            raise ParseError("Empty input")
+
+        input = self._process_substitutions(input)
+        
+        commands = []
+        for cmd_str in input.split('|'):
+            cmd_str = cmd_str.strip()
+            if cmd_str:
+                commands.append(self._parse_command(cmd_str))
+        
+        return ParsedInput(commands=commands)
+
+    def _process_substitutions(self, input: str) -> str:
+        """Process variable substitutions in the input string.
+        
+        Args:
+            input: Original input string
+            
+        Returns:
+            str: String with substitutions applied
+        """
+        def replace_var(match):
+            var_name = match.group(1)
+            return os.getenv(var_name, '')
+        
+        input = re.sub(r'\$\{(\w+)\}', replace_var, input)
+        input = re.sub(r'\$(\w+)', replace_var, input)
+        
+        return input
