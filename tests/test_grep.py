@@ -18,7 +18,8 @@ SIXTH line
 seventh line
 eighth line
 special_chars: !@#$%^&*()
-unicode: 你好 мир"""
+unicode: 你好 мир
+lineline"""
 
     def test_grep_simple_pattern(self):
         cmd = ParsedCommand("grep", ["line"])
@@ -33,7 +34,7 @@ unicode: 你好 мир"""
         exit_code, output = self.grep.execute(cmd, stdin=self.sample_text)
         self.assertEqual(exit_code, 0)
         self.assertIn("first line", output)
-        self.assertNotIn("Fifth LINE", output)
+        self.assertNotIn("lineline", output)
 
     def test_grep_case_insensitive(self):
         cmd = ParsedCommand("grep", ["-i", "fifth"])
@@ -50,6 +51,7 @@ unicode: 你好 мир"""
         self.assertIn("fourth line", result_lines)
         self.assertIn("Fifth LINE", result_lines)
         self.assertNotIn("second line", result_lines)
+        self.assertNotIn("seventh line", result_lines)
 
     def test_grep_combined_flags(self):
         cmd = ParsedCommand("grep", ["-i", "-w", "-A", "1", "sixth"])
@@ -96,6 +98,7 @@ class TestGrepIntegration(unittest.TestCase):
         self.executor = Executor()
         self.parser = Parser()
         self.sample_text = """first match\nsecond line\nthird match\nfourth line"""
+        self.intersection_text = """first match\nsecond match\nthird match\nfourth match"""
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_grep_in_pipeline(self, mock_stdout):
@@ -128,6 +131,37 @@ class TestGrepIntegration(unittest.TestCase):
         self.assertIn("third match", output_lines)
         self.assertIn("fourth line", output_lines)
         self.assertEqual(len(output_lines), 4)
+
+    @patch('sys.stdout', new_callable=io.StringIO) # работаем как обычный grep
+    def test_grep_with_intersection_in_matches(self, mock_stdout):
+        from src.parser import Parser
+        parser = Parser()
+
+        input_str = "echo '{}' | grep -i -A 1 MATCH".format(self.intersection_text)
+        parsed_input = parser.parse(input_str)
+
+        exit_code = self.executor.execute(parsed_input)
+        output_lines = mock_stdout.getvalue().strip().split('\n')
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("first match", output_lines)
+        self.assertIn("second match", output_lines)
+        self.assertIn("third match", output_lines)
+        self.assertIn("fourth match", output_lines)
+        self.assertEqual(len(output_lines), 4)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_grep_with_bad_input(self, mock_stdout):
+        from src.parser import Parser
+        parser = Parser()
+
+        input_str = "cat nonexistent_file | grep -i -A 1 MATCH"
+        parsed_input = parser.parse(input_str)
+
+        exit_code = self.executor.execute(parsed_input)
+        output_lines = mock_stdout.getvalue().strip().split('\n')
+
+        self.assertNotEqual(exit_code, 0)
 
 
 if __name__ == '__main__':
