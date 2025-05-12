@@ -80,14 +80,6 @@ classDiagram
     Executor --> PipelineEngine
     Parser --> SubstitutionHandler
 
-1. Пользовательский ввод → CLIManager
-2. CLIManager → Parser (разбор команды)
-3. Parser → Executor (передача ParsedInput) 
-4. Executor ↔ CommandRegistry (получение обработчиков)
-5. Executor → PipelineEngine (управление пайпами)
-6. PipelineEngine ↔ Команды (исполнение в процессах)
-7. Результат → CLIManager → Пользователю
-
 
 ## Описание
 
