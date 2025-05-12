@@ -54,7 +54,7 @@ class TestCLIManager(unittest.TestCase):
     @patch('builtins.input')
     def test_multiple_pipes(self, mock_input):
         mock_input.side_effect = [
-            "echo line1 line2 line3 | cat | wc", 
+            "echo line1 line2 line3 | cat | wc",
             "exit"
         ]
         manager = CLIManager()
@@ -66,7 +66,7 @@ class TestCLIManager(unittest.TestCase):
     @patch('builtins.input')
     def test_multiple_pipes_and_envvar(self, mock_input):
         mock_input.side_effect = [
-            "cat $TEST_VAR_PATH_TO_FILE | cat | wc", 
+            "cat $TEST_VAR_PATH_TO_FILE | cat | wc",
             "exit"
         ]
         manager = CLIManager()
@@ -74,11 +74,11 @@ class TestCLIManager(unittest.TestCase):
         output = self.held_output.getvalue()
         self.assertIn("3 3 17", output)
         self.assertIn("Exit code: 0", output)
-    
+
     @patch('builtins.input')
     def test_multiple_exit_in_multiple_pipes(self, mock_input):
         mock_input.side_effect = [
-            "cat $TEST_VAR_PATH_TO_FILE | exit | wc", 
+            "cat $TEST_VAR_PATH_TO_FILE | exit | wc",
         ]
         manager = CLIManager()
         manager.start()

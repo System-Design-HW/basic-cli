@@ -5,7 +5,7 @@ import tempfile
 import io
 from unittest.mock import patch
 from src.commands import (
-    EchoCommand, CatCommand, WcCommand, PwdCommand,
+    EchoCommand, CatCommand, GrepCommand, WcCommand, PwdCommand,
     ExitCommand, DefaultCommand, ExitCommandException
 )
 from src.parser import ParsedCommand
@@ -42,7 +42,7 @@ class TestCommands(unittest.TestCase):
     def test_cat_command_with_stdin(self, mock_stdout):
         cmd = CatCommand()
         exit_code, output = cmd.execute(
-            ParsedCommand("cat", []), 
+            ParsedCommand("cat", []),
             stdin="piped input"
         )
         self.assertEqual(exit_code, 0)
@@ -55,7 +55,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         expected_lines = 3
         expected_words = 3
-        expected_bytes = 3 * 5 + 2 
+        expected_bytes = 3 * 5 + 2
         expected = f"{expected_lines} {expected_words} {expected_bytes}"
         self.assertEqual(output, expected)
 
@@ -63,11 +63,12 @@ class TestCommands(unittest.TestCase):
     def test_wc_command_with_stdin(self, mock_stdout):
         cmd = WcCommand()
         exit_code, output = cmd.execute(
-            ParsedCommand("wc", []), 
+            ParsedCommand("wc", []),
             stdin="line1\nline2\nline3"
         )
         self.assertEqual(exit_code, 0)
         self.assertEqual(output, "3 3 17")
+
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_pwd_command(self, mock_stdout):
         cmd = PwdCommand()
@@ -110,3 +111,12 @@ class TestCommands(unittest.TestCase):
         )
         self.assertEqual(exit_code, 0)
         self.assertEqual(output, "line2")
+
+    def test_grep_command(self):
+        cmd = GrepCommand()
+        test_input = "test line\nanother test\nlast line"
+        exit_code, output = cmd.execute(ParsedCommand("grep", ["test"]), stdin=test_input)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("test line", output)
+        self.assertIn("another test", output)
+        self.assertNotIn("last line", output)
