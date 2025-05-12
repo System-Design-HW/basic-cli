@@ -1,67 +1,84 @@
-# Архитектура
+# Расширенная архитектура CLI интерпретатора
 
-┌───────────────────────┐
-│      CLIManager       │
-├───────────────────────┤
-│ + executor: Executor  │
-│ + parser: Parser      │
-├───────────────────────┤
-│ + start()             │
-│ + process_input()     │
-└──────────┬────────────┘
-           │
-           ▼
-┌───────────────────────┐
-│        Parser         │
-├───────────────────────┤
-│ + substitution_handler│
-├───────────────────────┤
-│ + parse()             │
-│ - parse_command()     │
-└──────────┬────────────┘
-           │
-           ▼
-┌───────────────────────┐
-│      Executor         │
-├───────────────────────┤
-│ + registry: Command   │
-│   Registry            │
-│ + pipeline: Pipeline  │
-│   Engine              │
-├───────────────────────┤
-│ + execute()           │
-└──────────┬────────────┘
-           │
-┌──────────┴─────────────────────────┐
-│                                  │
-▼                                  ▼
-┌───────────────────────┐          ┌───────────────────────┐
-│   Command Registry    │          │    Pipeline Engine    │
-├───────────────────────┤          ├───────────────────────┤
-│ + get_command()       │          │ + run_pipeline()      │
-│ + register_command()  │          │ - create_pipes()      │
-└──────────┬────────────┘          │ - redirect_streams()  │
-           │                       └───────────────────────┘
-           ▼
-┌───────────────────────┐
-│     Command (interface)│
-├───────────────────────┤
-│ + execute()           │
-└──────────┬────────────┘
-           │
-           ├─────────────────┐
-           │                 │
-           ▼                 ▼
-┌─────────────────────┐  ┌─────────────────────┐
-│    Built-in         │  │    DefaultCommand   │
-│    Commands         │  │                     │
-├─────────────────────┤  ├─────────────────────┤
-│ - CatCommand        │  │ + execute()         │
-│ - EchoCommand       │  └─────────────────────┘
-│ - WcCommand        │
-│ - PwdCommand       │
-│ - ExitCommand      │
-└─────────────────────┘
+```mermaid
+classDiagram
+    class Command {
+        <<interface>>
+        +execute(args: list[str], stdin: Optional[IO]) tuple[int, Optional[str]]
+    }
+    
+    class CatCommand {
+        +execute(args, stdin)
+    }
+    
+    class EchoCommand {
+        +execute(args, stdin)
+    }
+    
+    class WcCommand {
+        +execute(args, stdin)
+    }
+    
+    class PwdCommand {
+        +execute(args, stdin)
+    }
+    
+    class ExitCommand {
+        +execute(args, stdin)
+    }
+    
+    class DefaultCommand {
+        +execute(args, stdin)
+    }
+    
+    class CLIManager {
+        -executor: Executor
+        -parser: Parser
+        +start()
+        -process_input(input: str) int
+    }
+    
+    class Parser {
+        -substitution_handler: SubstitutionHandler
+        +parse(line: str) ParsedInput
+        -parse_command(cmd_str: str) ParsedCommand
+    }
+    
+    class Executor {
+        -registry: CommandRegistry
+        -pipeline: PipelineEngine
+        +execute(commands: ParsedInput) int
+    }
+    
+    class CommandRegistry {
+        -commands: Dict[str, Type[Command]]
+        +get_command(name: str) Command
+    }
+    
+    class PipelineEngine {
+        +run_pipeline(commands: list[ParsedCommand]) int
+        -create_pipes()
+        -redirect_streams()
+    }
+    
+    class SubstitutionHandler {
+        +process(input: str) str
+        -resolve_var(name: str) str
+        -resolve_cmd(cmd: str) str
+    }
+    
+    Command <|-- CatCommand
+    Command <|-- EchoCommand
+    Command <|-- WcCommand
+    Command <|-- PwdCommand
+    Command <|-- ExitCommand
+    Command <|-- DefaultCommand
+    
+    CLIManager --> Parser
+    CLIManager --> Executor
+    Executor --> CommandRegistry
+    Executor --> PipelineEngine
+    Parser --> SubstitutionHandler
 
 1. Пользовательский ввод → CLIManager
 2. CLIManager → Parser (разбор команды)
