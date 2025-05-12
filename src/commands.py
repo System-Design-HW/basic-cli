@@ -1,6 +1,8 @@
+import argparse
+import re
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Dict, List, Type
 from src.parser import ParsedCommand
 import os
 import sys
@@ -127,6 +129,65 @@ class ExitCommand(Command):
         raise ExitCommandException
 
 
+class GrepCommand(Command):
+    def execute(self, command: ParsedCommand, stdin: Optional[str] = None) -> tuple[int, Optional[str]]:
+        try:
+            args = self._parse_args(command.args)
+        except ValueError as e:
+            print(f"grep error: {e}", file=sys.stderr)
+            return (1, None)
+
+        pattern = self._build_pattern(args.pattern, args.word, args.ignore_case)
+        lines = self._read_input(command, stdin)
+        result = self._process_lines(lines, pattern, args.after_context)
+
+        return (0, '\n'.join(result) if result else None)
+
+    def _parse_args(self, args: List[str]) -> argparse.Namespace:
+        parser = argparse.ArgumentParser(prog='grep', add_help=False)
+        parser.add_argument('-w', '--word', action='store_true', help='match whole words only')
+        parser.add_argument('-i', '--ignore-case', action='store_true', help='case insensitive search')
+        parser.add_argument('-A', '--after-context', type=int, default=0, help='print N lines after match')
+        parser.add_argument('pattern', help='search pattern')
+        parser.add_argument('file', nargs='?', help='input file')
+
+        try:
+            return parser.parse_args(args)
+        except argparse.ArgumentError as e:
+            raise ValueError(str(e))
+
+    def _build_pattern(self, pattern: str, whole_word: bool, ignore_case: bool) -> re.Pattern:
+        regex = pattern
+        if whole_word:
+            regex = r'\b' + re.escape(pattern) + r'\b'
+        flags = re.IGNORECASE if ignore_case else 0
+        return re.compile(regex, flags)
+
+    def _read_input(self, command: ParsedCommand, stdin: Optional[str]) -> List[str]:
+        args = self._parse_args(command.args)
+        if args.file:
+            with open(args.file, 'r') as f:
+                return f.read().splitlines()
+        elif stdin:
+            return stdin.splitlines()
+        else:
+            return sys.stdin.read().splitlines()
+
+    def _process_lines(self, lines: List[str], pattern: re.Pattern, after_context: int) -> List[str]:
+        result = []
+        remaining_context = 0
+
+        for i, line in enumerate(lines):
+            if pattern.search(line):
+                result.append(line)
+                remaining_context = after_context
+            elif remaining_context > 0:
+                result.append(line)
+                remaining_context -= 1
+
+        return result
+
+
 class DefaultCommand(Command):
     """Fallback command executor for external system commands."""
 
@@ -171,7 +232,8 @@ class CommandRegistry:
         'echo': EchoCommand,
         'wc': WcCommand,
         'pwd': PwdCommand,
-        'exit': ExitCommand
+        'exit': ExitCommand,
+        'grep': GrepCommand
     }
 
     def get_command(self, name: str) -> Command:
