@@ -142,11 +142,11 @@ class CdCommand(Command):
     def execute(self, command: ParsedCommand, current_dir: str = None) -> int:
         """
         Change the current working directory.
-        
+
         Args:
             command: ParsedCommand object containing command name and arguments
             current_dir: Current working directory
-            
+
         Returns:
             int: Exit status code (0 for success, non-zero for errors)
         """
@@ -155,17 +155,17 @@ class CdCommand(Command):
                 target_dir = os.path.expanduser("~")
             else:
                 target_dir = command.args[0]
-                
+
             if current_dir and not os.path.isabs(target_dir):
                 target_dir = os.path.normpath(os.path.join(current_dir, target_dir))
-                
+
             if not os.path.isdir(target_dir):
                 print(f"cd: {target_dir}: No such directory")
                 return 1
-                
+
             if hasattr(self, 'manager'):
                 self.manager.current_dir = target_dir
-                
+
             os.chdir(target_dir)
             return 0
         except Exception as e:
@@ -179,11 +179,11 @@ class LsCommand(Command):
     def execute(self, command: ParsedCommand, current_dir: str = None) -> int:
         """
         List contents of a directory.
-        
+
         Args:
             command: ParsedCommand object containing command name and arguments
             current_dir: Current working directory
-            
+
         Returns:
             int: Exit status code (0 for success, non-zero for errors)
         """
@@ -194,7 +194,7 @@ class LsCommand(Command):
                 target_dir = command.args[0]
                 if current_dir and not os.path.isabs(target_dir):
                     target_dir = os.path.normpath(os.path.join(current_dir, target_dir))
-            
+
             if not os.path.isdir(target_dir):
                 print(f"ls: {target_dir}: No such directory")
                 return 1
@@ -202,7 +202,7 @@ class LsCommand(Command):
             entries = os.listdir(target_dir)
             for entry in sorted(entries):
                 print(entry)
-                
+
             return 0
         except Exception as e:
             print(f"ls: {e}")

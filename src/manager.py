@@ -65,10 +65,10 @@ class CLIManager:
             return 0  # Return success for empty input
 
         exit_code = self.executor.execute(parsed_input, self.current_dir)
-        
+
         if parsed_input.commands[0].command_name == 'cd' and exit_code == 0:
             self.current_dir = os.getcwd()
-            
+
         return exit_code
 
     def _stop(self):
