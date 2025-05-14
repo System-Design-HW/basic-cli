@@ -8,12 +8,13 @@ class Executor:
         """Initialize the executor with a command registry."""
         self.registry = CommandRegistry()
 
-    def execute(self, commands: ParsedInput) -> int:
+    def execute(self, commands: ParsedInput, current_dir: str = None) -> int:
         """
         Execute a sequence of parsed commands and return the final exit code.
 
         Args:
             commands: ParsedInput object containing commands to execute
+            current_dir: Current working directory for command execution
 
         Returns:
             int: Exit code from the last executed command
@@ -26,5 +27,5 @@ class Executor:
             cmd_obj = self.registry.get_command(command.command_name)
 
             # Execute command and store exit code
-            exit_code = cmd_obj.execute(command=command)
+            exit_code = cmd_obj.execute(command=command, current_dir=current_dir)
         return exit_code

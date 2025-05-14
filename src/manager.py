@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from src.commands import ExitCommandException
 from src.executor import Executor
@@ -12,6 +13,7 @@ class CLIManager:
         self.parser = Parser()		# Command input parser
         self.executor = Executor()  # Command execution handler
         self.is_running = False		# Session activity flag
+        self.current_dir = os.getcwd()  # Track current working directory
 
     def start(self):
         """Start the REPL (Read-Eval-Print Loop) session."""
@@ -62,7 +64,12 @@ class CLIManager:
         if not parsed_input.commands:
             return 0  # Return success for empty input
 
-        return self.executor.execute(parsed_input)
+        exit_code = self.executor.execute(parsed_input, self.current_dir)
+        
+        if parsed_input.commands[0].command_name == 'cd' and exit_code == 0:
+            self.current_dir = os.getcwd()
+            
+        return exit_code
 
     def _stop(self):
         """Gracefully terminate CLI session."""
